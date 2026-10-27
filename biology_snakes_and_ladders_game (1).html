@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Biology Snakes and Ladders Game: The Fungal Kingdom</title>
+<style>
+:root {
+  --bg: #14281d;
+  --bg-gradient: linear-gradient(135deg, #0d1e15 0%, #193828 50%, #11241a 100%);
+  --ink: #e8f5e9;
+  --panel: rgba(22, 48, 33, 0.85);
+  --panel-border: #2e5a3f;
+  --line: #2e5a3f;
+  --green: #4caf50;
+  --accent-gold: #ffd54f;
+  --red: #ff5252;
+  --plum: #38243c;
+  --muted: #a5d6a7;
+  --board-light: #43a047;
+  --board-dark: #2e7d32;
+  box-sizing: border-box;
+}
+
+:root[data-theme="light"] {
+  --bg: #e8f5e9;
+  --bg-gradient: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  --ink: #1b5e20;
+  --panel: rgba(255, 255, 255, 0.9);
+  --panel-border: #a5d6a7;
+  --line: #c8e6c9;
+  --muted: #388e3c;
+  --board-light: #a5d6a7;
+  --board-dark: #81c784;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; min-height: 100vh; }
+body {
+  background: var(--bg-gradient);
+  color: var(--ink);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.wrap {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.header-banner {
+  text-align: center;
+  margin-bottom: 12px;
+}
+.header-banner h1 {
+  margin: 0;
+  font-size: clamp(20px, 4vw, 32px);
+  color: var(--accent-gold);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  letter-spacing: 1px;
+}
+
+.stage {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  justify-items: center;
+}
+
+.side {
+  font-weight: 900;
+  font-size: clamp(22px, 3.2vw, 36px);
+  line-height: 1.1;
+  writing-mode: vertical-rl;
+  letter-spacing: 1px;
+  text-align: center;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  padding: 12px 6px;
+  user-select: none;
+}
+.left {
+  color: var(--accent-gold);
+  transform: rotate(180deg);
+}
+.right {
+  color: #81c784;
+}
+
+.board-container {
+  width: 100%;
+  max-width: 760px;
+  position: relative;
+}
+
+.board {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4), 0 0 0 4px var(--panel-border);
+  background: #1b3826;
+}
+
+.tok {
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  filter: drop-shadow(0px 3px 4px rgba(0,0,0,0.5));
+}
+
+.panel {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  backdrop-filter: blur(8px);
+}
+
+.players {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.pl {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 2px solid var(--panel-border);
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  background: rgba(0,0,0,0.15);
+  transition: all 0.2s ease;
+}
+.pl.on {
+  border-color: var(--accent-gold);
+  background: rgba(255, 213, 79, 0.15);
+  box-shadow: 0 0 12px rgba(255, 213, 79, 0.2);
+}
+
+.dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 4px rgba(0,0,0,0.5);
+  flex: none;
+}
+
+.pl b {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  background: rgba(0,0,0,0.3);
+  padding: 2px 8px;
+  border-radius: 6px;
+  color: var(--accent-gold);
+}
+
+.roll-zone {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+#die {
+  width: 68px;
+  height: 68px;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #1a1a1a;
+  border: 3px solid #ffd54f;
+  display: grid;
+  place-items: center;
+  font-size: 46px;
+  line-height: 1;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  user-select: none;
+}
+#die.spin {
+  animation: spin 0.4s ease-in-out infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg) scale(0.9); }
+  50% { transform: rotate(180deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(0.9); }
+}
+
+.btn {
+  font: inherit;
+  font-weight: 700;
+  border: 0;
+  border-radius: 10px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  transition: transform 0.1s ease, filter 0.2s ease;
+}
+.btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn.alt {
+  background: transparent;
+  color: var(--ink);
+  border: 2px solid var(--panel-border);
+}
+
+#turn {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0 0 10px;
+  color: var(--accent-gold);
+}
+
+#log {
+  margin: 10px 0 0;
+  padding: 8px 12px;
+  list-style: none;
+  font-size: 14px;
+  color: var(--muted);
+  min-height: 100px;
+  max-height: 120px;
+  overflow-y: auto;
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+#log li { padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+#log li:first-child { color: #fff; font-weight: 700; }
+
+.legend {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 12px 0 0;
+  line-height: 1.4;
+}
+
+#win {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: none;
+  place-items: center;
+  z-index: 10;
+  backdrop-filter: blur(4px);
+}
+#win.show { display: grid; }
+#win .box {
+  background: var(--panel);
+  border: 2px solid var(--accent-gold);
+  padding: 30px;
+  border-radius: 18px;
+  text-align: center;
+  max-width: 340px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+}
+#win h2 { margin: 0 0 8px; color: var(--accent-gold); font-size: 26px; }
+#win p { margin: 0 0 20px; color: var(--ink); font-size: 16px; }
+
+@media (max-width: 820px) {
+  .stage { grid-template-columns: 1fr; }
+  .side { writing-mode: horizontal-tb; transform: none; font-size: 22px; padding: 4px; }
+  .left { order: -2; }
+  .right { order: -1; }
+  .panel { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header-banner">
+    <h1>🔬 FUNGAL KINGDOM BIOLOGY GAME 🍄</h1>
+  </div>
+
+  <div class="stage">
+    <!-- Left Title -->
+    <div class="side left">The Fungal Kingdom</div>
+
+    <!-- Main Game Board Canvas/SVG -->
+    <div class="board-container">
+      <svg id="board" class="board" viewBox="0 0 1000 1000" role="img" aria-label="Snakes and Ladders Biology Game Board"></svg>
+    </div>
+
+    <!-- Right Title -->
+    <div class="side right">Biology Snakes and Ladders Game</div>
+  </div>
+
+  <!-- Interactive Control Panel -->
+  <div class="panel">
+    <div class="card">
+      <div id="turn">Player 1’s turn</div>
+      <div class="roll-zone">
+        <div id="die" aria-live="polite">⚀</div>
+        <button id="rollBtn" class="btn">Roll Dice 🎲</button>
+        <button id="resetBtn" class="btn alt">Reset Game</button>
+      </div>
+      <ul id="log"></ul>
+    </div>
+
+    <div class="card">
+      <div class="players" id="players"></div>
+      <p class="legend">
+        🌿 <b>Rules:</b> Players take turns rolling the dice. Land on a ladder base to climb up! Beware of fungi-spotted snakes that will slide you down. Roll a <b>6</b> for a bonus turn. Land <b>exactly on square 100</b> to win!
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Victory Modal -->
+<div id="win">
+  <div class="box">
+    <h2 id="winTitle">Player Wins! 🎉</h2>
+    <p>Conquered the Fungal Kingdom and reached square 100!</p>
+    <button id="again" class="btn">Play Again 🔄</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  // Board configuration
+  var CW = 100, CH = 100;
+  
+  // Exact 8 snakes requested and positioned for clear grid visibility
+  var SNAKES = {
+    98: 79,
+    95: 74,
+    84: 57,
+    73: 53,
+    65: 46,
+    48: 27,
+    37: 17,
+    21: 2
+  };
+
+  // Ladders climbing up
+  var LADDERS = {
+    4: 25,
+    12: 32,
+    28: 50,
+    36: 67,
+    51: 72,
+    71: 91
+  };
+
+  var PLAYER_COLORS = ["#ff5252", "#40c4ff", "#ffd54f", "#e040fb"];
+  var PLAYER_NAMES = ["Spore Explorer 1", "Mycelium Runner 2", "Fungi Master 3", "Lichen Scout 4"];
+  var OFFSETS = [[-18, -18], [18, -18], [-18, 18], [18, 18]];
+  
+  var NS = "http://www.w3.org/2000/svg";
+  var svg = document.getElementById("board");
+
+  // Utility to calculate grid center coordinates for any cell (1-100)
+  function getCenter(n) {
+    var r = Math.floor((n - 1) / 10);
+    var c = (n - 1) % 10;
+    if (r % 2 === 1) c = 9 - c; // Zigzag pattern
+    return [c * CW + CW / 2, (9 - r) * CH + CH / 2];
+  }
+
+  function createSvgElement(tag, attrs, parent) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    (parent || svg).appendChild(e);
+    return e;
+  }
+
+  // Draw 100 squares grid
+  function drawBoard() {
+    for (var n = 1; n <= 100; n++) {
+      var r = Math.floor((n - 1) / 10);
+      var c = (n - 1) % 10;
+      if (r % 2 === 1) c = 9 - c;
+
+      var x = c * CW;
+      var y = (9 - r) * CH;
+      var isDark = (r + c) % 2 === 1;
+
+      // Cell tile
+      createSvgElement("rect", {
+        x: x, y: y, width: CW, height: CH,
+        fill: isDark ? "#2d5a3f" : "#438e5e",
+        stroke: "#1b3826",
+        "stroke-width": 2,
+        rx: 4
+      });
+
+      // Decorative inner border
+      createSvgElement("rect", {
+        x: x + 2, y: y + 2, width: CW - 4, height: CH - 4,
+        fill: "none",
+        stroke: isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.12)",
+        "stroke-width": 1
+      });
+
+      // Cell numbers
+      var p = getCenter(n);
+      var txt = createSvgElement("text", {
+        x: x + 10,
+        y: y + 26,
+        "font-size": 20,
+        "font-weight": "800",
+        fill: isDark ? "#a5d6a7" : "#e8f5e9",
+        "font-family": "system-ui, sans-serif"
+      });
+      txt.textContent = n;
+
+      // Add special trophy/spore icon on 100
+      if (n === 100) {
+        var crown = createSvgElement("text", {
+          x: p[0], y: p[1] + 12,
+          "font-size": 42,
+          "text-anchor": "middle"
+        });
+        crown.textContent = "🏆";
+      }
+    }
+  }
+
+  // Render Ladders
+  function drawLadders() {
+    for (var start in LADDERS) {
+      var end = LADDERS[start];
+      var p = getCenter(+start);
+      var q = getCenter(end);
+
+      var dx = q[0] - p[0];
+      var dy = q[1] - p[1];
+      var L = Math.hypot(dx, dy);
+      var ux = dx / L, uy = dy / L;
+      var nx = -uy * 14, ny = ux * 14;
+
+      var g = createSvgElement("g", { class: "ladder-group" });
+
+      // Side rails
+      createSvgElement("line", {
+        x1: p[0] + nx, y1: p[1] + ny, x2: q[0] + nx, y2: q[1] + ny,
+        stroke: "#8d6e63", "stroke-width": 7, "stroke-linecap": "round"
+      }, g);
+      createSvgElement("line", {
+        x1: p[0] - nx, y1: p[1] - ny, x2: q[0] - nx, y2: q[1] - ny,
+        stroke: "#8d6e63", "stroke-width": 7, "stroke-linecap": "round"
+      }, g);
+
+      // Inner highlight rails
+      createSvgElement("line", {
+        x1: p[0] + nx, y1: p[1] + ny, x2: q[0] + nx, y2: q[1] + ny,
+        stroke: "#d7ccc8", "stroke-width": 2, "stroke-linecap": "round"
+      }, g);
+      createSvgElement("line", {
+        x1: p[0] - nx, y1: p[1] - ny, x2: q[0] - nx, y2: q[1] - ny,
+        stroke: "#d7ccc8", "stroke-width": 2, "stroke-linecap": "round"
+      }, g);
+
+      // Rungs
+      var rungSpacing = 26;
+      for (var d = 20; d < L - 10; d += rungSpacing) {
+        var cx = p[0] + ux * d;
+        var cy = p[1] + uy * d;
+        createSvgElement("line", {
+          x1: cx + nx, y1: cy + ny, x2: cx - nx, y2: cy - ny,
+          stroke: "#bcaaa4", "stroke-width": 5, "stroke-linecap": "round"
+        }, g);
+      }
+    }
+  }
+
+  // Render 8 Snakes
+  var SNAKE_PALETTES = [
+    { body: "#e53935", belly: "#ff8a80", spot: "#ffeb3b" },
+    { body: "#8e24aa", belly: "#ea80fc", spot: "#00e676" },
+    { body: "#00acc1", belly: "#80d8ff", spot: "#ffff00" },
+    { body: "#fb8c00", belly: "#ffe082", spot: "#d50000" },
+    { body: "#43a047", belly: "#b9f6ca", spot: "#ff6d00" },
+    { body: "#d81b60", belly: "#ff80ab", spot: "#00e5ff" },
+    { body: "#3949ab", belly: "#8c9eff", spot: "#ffeb3b" },
+    { body: "#c0ca33", belly: "#f4ff81", spot: "#e91e63" }
+  ];
+
+  function drawSnakes() {
+    var idx = 0;
+    for (var headSquare in SNAKES) {
+      var tailSquare = SNAKES[headSquare];
+      var p = getCenter(+headSquare);
+      var q = getCenter(tailSquare);
+
+      var dx = q[0] - p[0];
+      var dy = q[1] - p[1];
+      var L = Math.hypot(dx, dy);
+      var ux = dx / L, uy = dy / L;
+      var nx = -uy, ny = ux;
+
+      var waves = Math.max(2, Math.round(L / 120));
+      var amp = 24 + (idx % 3) * 6;
+      var pts = [];
+
+      for (var k = 0; k <= 50; k++) {
+        var s = k / 50;
+        var waveOffset = Math.sin(s * Math.PI * waves * 2) * amp * Math.sin(s * Math.PI);
+        pts.push([p[0] + dx * s + nx * waveOffset, p[1] + dy * s + ny * waveOffset]);
+      }
+
+      var pathStr = "M " + pts.map(function(pt) { return pt[0].toFixed(1) + " " + pt[1].toFixed(1); }).join(" L ");
+      var pal = SNAKE_PALETTES[idx % SNAKE_PALETTES.length];
+      idx++;
+
+      var g = createSvgElement("g", { class: "snake-group" });
+
+      // Shadow
+      createSvgElement("path", {
+        d: pathStr, fill: "none", stroke: "rgba(0,0,0,0.35)",
+        "stroke-width": 22, "stroke-linecap": "round", "stroke-linejoin": "round"
+      }, g);
+
+      // Snake Body Outer
+      createSvgElement("path", {
+        d: pathStr, fill: "none", stroke: pal.body,
+        "stroke-width": 18, "stroke-linecap": "round", "stroke-linejoin": "round"
+      }, g);
+
+      // Snake Belly Line
+      createSvgElement("path", {
+        d: pathStr, fill: "none", stroke: pal.belly,
+        "stroke-width": 10, "stroke-linecap": "round", "stroke-linejoin": "round"
+      }, g);
+
+      // Pattern Spots
+      createSvgElement("path", {
+        d: pathStr, fill: "none", stroke: pal.spot,
+        "stroke-width": 4, "stroke-dasharray": "2 12", "stroke-linecap": "round"
+      }, g);
+
+      // Head
+      var headPt = pts[0];
+      var neckPt = pts[3];
+      var angle = Math.atan2(headPt[1] - neckPt[1], headPt[0] - neckPt[0]) * 180 / Math.PI;
+
+      var headG = createSvgElement("g", {
+        transform: "translate(" + headPt[0] + " " + headPt[1] + ") rotate(" + angle + ")"
+      }, g);
+
+      // Head shape
+      createSvgElement("ellipse", { cx: 4, cy: 0, rx: 16, ry: 13, fill: pal.body, stroke: "#111", "stroke-width": 1.5 }, headG);
+      // Eyes
+      createSvgElement("circle", { cx: 8, cy: -5, r: 3.5, fill: "#fff" }, headG);
+      createSvgElement("circle", { cx: 8, cy: 5, r: 3.5, fill: "#fff" }, headG);
+      createSvgElement("circle", { cx: 9, cy: -5, r: 1.8, fill: "#000" }, headG);
+      createSvgElement("circle", { cx: 9, cy: 5, r: 1.8, fill: "#000" }, headG);
+      // Forked Tongue
+      createSvgElement("path", {
+        d: "M 18 0 L 26 0 M 26 0 L 31 -4 M 26 0 L 31 4",
+        stroke: "#e53935", fill: "none", "stroke-width": 2, "stroke-linecap": "round"
+      }, headG);
+    }
+  }
+
+  // Player State
+  var playerPositions = [1, 1, 1, 1];
+  var playerTokens = [];
+  var currentPlayer = 0;
+  var isBusy = false;
+  var logMessages = [];
+
+  // Create Player Token Elements
+  function createTokens() {
+    for (var i = 0; i < 4; i++) {
+      var g = createSvgElement("g", { class: "tok" });
+      
+      // Outer halo
+      createSvgElement("circle", { r: 16, fill: PLAYER_COLORS[i], stroke: "#ffffff", "stroke-width": 3 }, g);
+      // Inner mark
+      createSvgElement("circle", { r: 7, fill: "rgba(0,0,0,0.25)" }, g);
+      
+      var txt = createSvgElement("text", {
+        y: 5, "text-anchor": "middle", "font-size": 13, "font-weight": "900", fill: "#ffffff"
+      }, g);
+      txt.textContent = i + 1;
+
+      playerTokens.push(g);
+      updateTokenPosition(i, 1);
+    }
+  }
+
+  function updateTokenPosition(playerIdx, squareNum) {
+    var p = getCenter(squareNum);
+    var offset = OFFSETS[playerIdx];
+    playerTokens[playerIdx].setAttribute("transform", "translate(" + (p[0] + offset[0]) + "," + (p[1] + offset[1]) + ")");
+  }
+
+  // UI Components
+  var turnEl = document.getElementById("turn");
+  var dieEl = document.getElementById("die");
+  var rollBtn = document.getElementById("rollBtn");
+  var logEl = document.getElementById("log");
+  var playersEl = document.getElementById("players");
+  var winEl = document.getElementById("win");
+  var DICE_FACES = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+
+  function renderPlayerCards() {
+    playersEl.innerHTML = "";
+    for (var i = 0; i < 4; i++) {
+      var div = document.createElement("div");
+      div.className = "pl" + (i === currentPlayer ? " on" : "");
+      div.innerHTML = '<span class="dot" style="background:' + PLAYER_COLORS[i] + '"></span>' +
+                      PLAYER_NAMES[i] + '<b>' + playerPositions[i] + '</b>';
+      playersEl.appendChild(div);
+    }
+    turnEl.textContent = PLAYER_NAMES[currentPlayer] + "’s Turn";
+  }
+
+  function addLog(msg) {
+    logMessages.unshift(msg);
+    if (logMessages.length > 8) logMessages.pop();
+    logEl.innerHTML = logMessages.map(function(m) { return "<li>" + m + "</li>"; }).join("");
+  }
+
+  function delay(ms) {
+    return new Promise(function(resolve) { setTimeout(resolve, ms); });
+  }
+
+  // Turn Execution Logic
+  async function handleTurn() {
+    if (isBusy) return;
+    isBusy = true;
+    rollBtn.disabled = true;
+
+    // Dice Spin Animation
+    dieEl.classList.add("spin");
+    for (var k = 0; k < 6; k++) {
+      dieEl.textContent = DICE_FACES[Math.floor(Math.random() * 6)];
+      await delay(70);
+    }
+    dieEl.classList.remove("spin");
+
+    var roll = Math.floor(Math.random() * 6) + 1;
+    dieEl.textContent = DICE_FACES[roll - 1];
+
+    var pName = PLAYER_NAMES[currentPlayer];
+    var currentPos = playerPositions[currentPlayer];
+    var targetPos = currentPos + roll;
+
+    if (targetPos > 100) {
+      addLog("🎲 " + pName + " rolled " + roll + " (needs exactly " + (100 - currentPos) + " to finish). Stays on " + currentPos + ".");
+    } else {
+      addLog("🎲 " + pName + " rolled " + roll + ".");
+      
+      // Step-by-step movement
+      for (var s = 0; s < roll; s++) {
+        playerPositions[currentPlayer]++;
+        updateTokenPosition(currentPlayer, playerPositions[currentPlayer]);
+        renderPlayerCards();
+        await delay(220);
+      }
+
+      var finalCell = playerPositions[currentPlayer];
+
+      // Check Ladders
+      if (LADDERS[finalCell]) {
+        var climbTo = LADDERS[finalCell];
+        addLog("🪜 " + pName + " found a fungal ladder! Climbed from " + finalCell + " to " + climbTo + ".");
+        await delay(300);
+        playerPositions[currentPlayer] = climbTo;
+        updateTokenPosition(currentPlayer, climbTo);
+        await delay(400);
+      }
+      // Check Snakes
+      else if (SNAKES[finalCell]) {
+        var slideTo = SNAKES[finalCell];
+        addLog("🐍 " + pName + " was bitten by a spore snake! Slid down from " + finalCell + " to " + slideTo + ".");
+        await delay(300);
+        playerPositions[currentPlayer] = slideTo;
+        updateTokenPosition(currentPlayer, slideTo);
+        await delay(400);
+      }
+
+      // Check Winner
+      if (playerPositions[currentPlayer] === 100) {
+        renderPlayerCards();
+        document.getElementById("winTitle").textContent = pName + " Wins!";
+        winEl.classList.add("show");
+        isBusy = false;
+        return;
+      }
+    }
+
+    // Roll again rule on 6
+    if (roll === 6 && targetPos <= 100) {
+      addLog("✨ " + pName + " rolled a 6 and gets a extra turn!");
+    } else {
+      currentPlayer = (currentPlayer + 1) % 4;
+    }
+
+    renderPlayerCards();
+    isBusy = false;
+    rollBtn.disabled = false;
+  }
+
+  function resetGame() {
+    playerPositions = [1, 1, 1, 1];
+    currentPlayer = 0;
+    logMessages = [];
+    logEl.innerHTML = "";
+    for (var i = 0; i < 4; i++) {
+      updateTokenPosition(i, 1);
+    }
+    winEl.classList.remove("show");
+    isBusy = false;
+    rollBtn.disabled = false;
+    dieEl.textContent = DICE_FACES[0];
+    addLog("🎮 Game started! All 4 players are ready at square 1.");
+    renderPlayerCards();
+  }
+
+  // Setup Board & Listeners
+  drawBoard();
+  drawLadders();
+  drawSnakes();
+  createTokens();
+
+  rollBtn.addEventListener("click", handleTurn);
+  document.getElementById("resetBtn").addEventListener("click", resetGame);
+  document.getElementById("again").addEventListener("click", resetGame);
+
+  // Initialize
+  resetGame();
+})();
+</script>
+</body>
+</html>
